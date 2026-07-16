@@ -2,6 +2,7 @@
 <html>
 <head>
   <title>StampLoop - My Stamps</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
   <style>
     body { text-align: center; font-family: sans-serif; padding-top: 30px; background-color: #f9f9f9; }
     #stampCountDisplay { font-size: 56px; color: #4CAF50; margin: 10px 0; font-weight: bold; }
@@ -16,14 +17,27 @@
   <h2 id="stampCountDisplay">Loading...</h2>
 
   <div class="qr-card">
-    <img src="qr_code.png" alt="My Member QR Code">
+    <div id="qrcode" style="display: flex; justify-content: center; margin: 20px;"></div>
     <p>Please show this QR code to the cashier</p>
   </div>
 
-  <script type="module">
+<script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-    // 1. 注意这里：我们去掉了 getDoc，换成了 onSnapshot
     import { getFirestore, doc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+    // 💡 修复点：在这里全局定义你的 User ID！
+    const myUserId = "test_user_001";
+
+    // 让系统自动画出二维码
+    const qrCodeContainer = document.getElementById("qrcode");
+    new QRCode(qrCodeContainer, {
+      text: myUserId, // 现在系统认识这个变量了
+      width: 250,
+      height: 250,
+      colorDark : "#000000",
+      colorLight : "#ffffff",
+      correctLevel : QRCode.CorrectLevel.H
+    });
 
     const firebaseConfig = {
       apiKey: "AIzaSyCy2L_W38K-7JHtbfLu1oJeHcxkCr9yk2o",
@@ -37,14 +51,13 @@
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
 
-    const docRef = doc(db, "users", "test_user_001");
+    // 💡 修复点：这里也复用刚才定义的变量，保持数据一致性
+    const docRef = doc(db, "users", myUserId);
 
-    // 2. 核心魔法：onSnapshot 实时监听！
-    // 只要数据库里的 test_user_001 发生任何改变，这段代码就会自动执行一次
+    // 核心魔法：onSnapshot 实时监听！
     onSnapshot(docRef, (docSnap) => {
       if (docSnap.exists()) {
         const userData = docSnap.data();
-        // 瞬间更新网页上的数字
         document.getElementById("stampCountDisplay").innerText = userData.stamp_count + " Stamps";
         console.log("叮！检测到数据库更新，当前积分: ", userData.stamp_count);
       } else {
@@ -52,5 +65,3 @@
       }
     });
   </script>
-</body>
-</html>

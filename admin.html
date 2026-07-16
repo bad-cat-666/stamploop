@@ -1,30 +1,66 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>StampLoop - Admin Scanner</title>
-  <!-- 1. 引入强大的扫码开源库 -->
+  <title>StampLoop - Admin Pro</title>
   <script src="https://unpkg.com/html5-qrcode"></script>
   <style>
     body { text-align: center; font-family: sans-serif; padding-top: 30px; background-color: #f4f4f9; }
-    h1 { color: #333; }
-    /* 扫码框的样式 */
-    #reader { width: 100%; max-width: 400px; margin: 0 auto; box-shadow: 0 4px 8px rgba(0,0,0,0.1); border-radius: 8px; overflow: hidden; background: white; }
-    #status { margin-top: 20px; font-size: 20px; font-weight: bold; color: #ff9800; }
+    #reader { width: 100%; max-width: 400px; margin: 0 auto; box-shadow: 0 4px 8px rgba(0,0,0,0.1); border-radius: 8px; background: white; }
+    
+    /* 新增的控制面板样式 */
+    #control-panel { display: none; margin-top: 20px; padding: 20px; background: white; border-radius: 8px; max-width: 400px; margin-left: auto; margin-right: auto; box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
+    .btn { padding: 15px 30px; font-size: 18px; margin: 10px; border: none; border-radius: 5px; cursor: pointer; color: white; font-weight: bold; }
+    .btn-add { background-color: #4CAF50; }
+    .btn-redeem { background-color: #f44336; display: none; /* 默认隐藏，满10分才显示 */ }
+    .btn-cancel { background-color: #9e9e9e; }
+    
+    #status { margin-top: 20px; font-size: 18px; font-weight: bold; color: #ff9800; }
   </style>
 </head>
 <body>
   
-  <h1>Shop Owner Scanner</h1>
-  <p>Please scan customer's QR code</p>
+  <h1>Owner Terminal</h1>
   
-  <!-- 2. 摄像头画面会显示在这个 div 里面 -->
-  <div id="reader"></div>
-  <div id="status">Waiting for camera...</div>
+  <!-- 扫码区 -->
+  <div id="scanner-section">
+    <p>Please scan customer's QR code</p>
+    <div id="reader"></div>
+  </div>
 
-  <!-- 3. 后端加分逻辑 -->
+  <!-- 操作面板区 (扫码后才会显示) -->
+  <div id="control-panel">
+    <h2 id="customer-id-display">User: ---</h2>
+    <h1 id="current-stamps-display" style="color: #2196F3; font-size: 40px;">0 Stamps</h1>
+    
+    <button class="btn btn-add" id="btn-add">+1 Stamp</button>
+    <button class="btn btn-redeem" id="btn-redeem">Redeem (-10)</button>
+    <br>
+    <button class="btn btn-cancel" id="btn-cancel">Cancel</button>
+  </div>
+
+  <div id="status">Waiting for scan...</div>
+
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-    import { getFirestore, doc, updateDoc, increment } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+    import { getFirestore, doc, getDoc, updateDoc, increment } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+    function playBeep() {
+      const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      const oscillator = audioCtx.createOscillator();
+      const gainNode = audioCtx.createGain();
+      
+      oscillator.type = 'sine'; // 产生纯正弦波
+      oscillator.frequency.setValueAtTime(1000, audioCtx.currentTime); // 频率 1000Hz
+      
+      gainNode.gain.setValueAtTime(1, audioCtx.currentTime); // 初始音量
+      gainNode.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.1); // 0.1秒内快速衰减，形成清脆的“滴”声
+      
+      oscillator.connect(gainNode);
+      gainNode.connect(audioCtx.destination);
+      
+      oscillator.start();
+      oscillator.stop(audioCtx.currentTime + 0.1);
+    }
 
     const firebaseConfig = {
       apiKey: "AIzaSyCy2L_W38K-7JHtbfLu1oJeHcxkCr9yk2o",
@@ -38,51 +74,105 @@
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
 
+    // UI 元素绑定
+    const scannerSection = document.getElementById('scanner-section');
+    const controlPanel = document.getElementById('control-panel');
+    const customerIdDisplay = document.getElementById('customer-id-display');
+    const currentStampsDisplay = document.getElementById('current-stamps-display');
+    const btnAdd = document.getElementById('btn-add');
+    const btnRedeem = document.getElementById('btn-redeem');
+    const btnCancel = document.getElementById('btn-cancel');
     const statusDiv = document.getElementById('status');
-    let isProcessing = false; // 加入互斥锁，防止一次扫码触发多次加分
 
-    // 扫码成功后的动作
+    let currentUserId = null;
+    let isScanning = true;
+
+    // 1. 扫码成功：暂停扫码，拉取数据，显示面板
     async function onScanSuccess(decodedText) {
-      if (isProcessing) return; // 如果正在加分，忽略后续的画面扫描
-      isProcessing = true;
+      if (!isScanning) return; 
+      isScanning = false; 
+      playBeep(); // 扫码成功的瞬间，触发蜂鸣器！
       
-      const scannedUserId = decodedText; // 扫出来的内容就是顾客 ID (test_user_001)
-      statusDiv.innerText = `Scanned ID: ${scannedUserId}. Processing...`;
-      statusDiv.style.color = "blue";
-
+      currentUserId = decodedText;
+      statusDiv.innerText = `Loading data for ${currentUserId}...`;
+      
       try {
-        // 去 Firebase 找到对应的顾客 ID，并加 1 分！
-        const userRef = doc(db, "users", scannedUserId);
-        await updateDoc(userRef, {
-          stamp_count: increment(1)
-        });
+        // 去数据库查这个顾客现在的分数
+        const userRef = doc(db, "users", currentUserId);
+        const userSnap = await getDoc(userRef);
         
-        statusDiv.innerText = `Success! +1 Stamp to ${scannedUserId}`;
-        statusDiv.style.color = "green";
-        
-        // 弹窗提示老板，顺便充当暂停功能
-        alert(`Successfully added 1 stamp to ${scannedUserId}!`);
-        
+        if (userSnap.exists()) {
+          const stamps = userSnap.data().stamp_count || 0;
+          
+          // 切换UI显示
+          scannerSection.style.display = "none";
+          controlPanel.style.display = "block";
+          statusDiv.innerText = "Action required";
+          
+          customerIdDisplay.innerText = `User: ${currentUserId}`;
+          currentStampsDisplay.innerText = `${stamps} Stamps`;
+          
+          // 如果分数大于等于10，就显示大红色的兑换按钮
+          if (stamps >= 10) {
+            btnRedeem.style.display = "inline-block";
+          } else {
+            btnRedeem.style.display = "none";
+          }
+        } else {
+          statusDiv.innerText = "User not found in database!";
+          resetScanner();
+        }
       } catch (error) {
-        console.error("Error adding stamp: ", error);
-        statusDiv.innerText = "Error! Please try again.";
-        statusDiv.style.color = "red";
+        console.error(error);
+        statusDiv.innerText = "Network Error";
+        resetScanner();
       }
-
-      // 恢复状态，准备接待下一位顾客
-      setTimeout(() => {
-        isProcessing = false;
-        statusDiv.innerText = "Waiting for next scan...";
-        statusDiv.style.color = "#ff9800";
-      }, 1500);
     }
 
-    // 初始化扫码器 (FPS: 帧率, qrbox: 扫描框大小)
+    // 2. 按钮功能逻辑
+    btnAdd.onclick = async () => {
+      await processTransaction(1, "Added 1 Stamp!");
+    };
+
+    btnRedeem.onclick = async () => {
+      // 确认弹窗防误触
+      if(confirm("Confirm to redeem 10 stamps?")) {
+        await processTransaction(-10, "Reward Redeemed! Deducted 10 Stamps.");
+      }
+    };
+
+    btnCancel.onclick = () => {
+      resetScanner();
+    };
+
+    // 执行数据库事务的核心函数
+    async function processTransaction(amount, successMessage) {
+      statusDiv.innerText = "Processing...";
+      try {
+        const userRef = doc(db, "users", currentUserId);
+        await updateDoc(userRef, {
+          stamp_count: increment(amount)
+        });
+        alert(successMessage);
+        resetScanner(); // 做完交易，复位系统
+      } catch (error) {
+        alert("Transaction failed!");
+        resetScanner();
+      }
+    }
+
+    // 复位系统函数：回到待机扫码状态
+    function resetScanner() {
+      currentUserId = null;
+      isScanning = true;
+      scannerSection.style.display = "block";
+      controlPanel.style.display = "none";
+      statusDiv.innerText = "Waiting for scan...";
+    }
+
+    // 初始化扫码器
     let html5QrcodeScanner = new Html5QrcodeScanner(
-      "reader",
-      { fps: 10, qrbox: {width: 250, height: 250} },
-      false);
-      
+      "reader", { fps: 10, qrbox: {width: 250, height: 250} }, false);
     html5QrcodeScanner.render(onScanSuccess);
   </script>
 </body>
