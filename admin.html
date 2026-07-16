@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>StampLoop - Shop Admin</title>
+  <style>
+    /* 给老板端加一点后台管理系统的感觉 */
+    body { text-align: center; font-family: sans-serif; padding-top: 80px; background-color: #f4f4f9; }
+    
+    /* 设计一个漂亮的、有点击手感的按钮 */
+    #addStampBtn { 
+      padding: 20px 40px; 
+      font-size: 24px; 
+      font-weight: bold;
+      background-color: #ff9800; 
+      color: white; 
+      border: none; 
+      border-radius: 12px; 
+      cursor: pointer; 
+      box-shadow: 0 6px 10px rgba(0,0,0,0.15);
+      transition: all 0.2s;
+    }
+    
+    /* 按钮按下去的动态效果 */
+    #addStampBtn:active { 
+      background-color: #e68a00; 
+      transform: translateY(4px); 
+      box-shadow: 0 2px 5px rgba(0,0,0,0.15);
+    }
+  </style>
+</head>
+<body>
+  
+  <h1>Shop Owner Dashboard</h1>
+  <p>Currently scanning: test_user_001</p>
+  
+  <!-- 老板的加分操作台 -->
+  <button id="addStampBtn">+1 Stamp</button>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+    import { getFirestore, doc, updateDoc, increment } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyCy2L_W38K-7JHtbfLu1oJeHcxkCr9yk2o",
+      authDomain: "stamploop-6c637.firebaseapp.com",
+      projectId: "stamploop-6c637",
+      storageBucket: "stamploop-6c637.firebasestorage.app",
+      messagingSenderId: "478328647867",
+      appId: "1:478328647867:web:a31a5bd7f3279304d3b99e"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
+    const button = document.getElementById("addStampBtn");
+    
+    button.addEventListener("click", async () => {
+      // 点击瞬间，按钮文字改变，给老板反馈
+      button.innerText = "Processing...";
+      
+      const userRef = doc(db, "users", "test_user_001");
+      
+      // 后端执行加 1 操作
+      await updateDoc(userRef, {
+        stamp_count: increment(1)
+      });
+      
+      // 恢复按钮状态并提示成功
+      button.innerText = "+1 Stamp";
+      alert("Success! 积分已发送至顾客账户。");
+    });
+  </script>
+</body>
+</html>
