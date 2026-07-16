@@ -1,41 +1,27 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>StampLoop - Shop Admin</title>
+  <title>StampLoop - Admin Scanner</title>
+  <!-- 1. 引入强大的扫码开源库 -->
+  <script src="https://unpkg.com/html5-qrcode"></script>
   <style>
-    /* 给老板端加一点后台管理系统的感觉 */
-    body { text-align: center; font-family: sans-serif; padding-top: 80px; background-color: #f4f4f9; }
-    
-    /* 设计一个漂亮的、有点击手感的按钮 */
-    #addStampBtn { 
-      padding: 20px 40px; 
-      font-size: 24px; 
-      font-weight: bold;
-      background-color: #ff9800; 
-      color: white; 
-      border: none; 
-      border-radius: 12px; 
-      cursor: pointer; 
-      box-shadow: 0 6px 10px rgba(0,0,0,0.15);
-      transition: all 0.2s;
-    }
-    
-    /* 按钮按下去的动态效果 */
-    #addStampBtn:active { 
-      background-color: #e68a00; 
-      transform: translateY(4px); 
-      box-shadow: 0 2px 5px rgba(0,0,0,0.15);
-    }
+    body { text-align: center; font-family: sans-serif; padding-top: 30px; background-color: #f4f4f9; }
+    h1 { color: #333; }
+    /* 扫码框的样式 */
+    #reader { width: 100%; max-width: 400px; margin: 0 auto; box-shadow: 0 4px 8px rgba(0,0,0,0.1); border-radius: 8px; overflow: hidden; background: white; }
+    #status { margin-top: 20px; font-size: 20px; font-weight: bold; color: #ff9800; }
   </style>
 </head>
 <body>
   
-  <h1>Shop Owner Dashboard</h1>
-  <p>Currently scanning: test_user_001</p>
+  <h1>Shop Owner Scanner</h1>
+  <p>Please scan customer's QR code</p>
   
-  <!-- 老板的加分操作台 -->
-  <button id="addStampBtn">+1 Stamp</button>
+  <!-- 2. 摄像头画面会显示在这个 div 里面 -->
+  <div id="reader"></div>
+  <div id="status">Waiting for camera...</div>
 
+  <!-- 3. 后端加分逻辑 -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
     import { getFirestore, doc, updateDoc, increment } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
@@ -52,23 +38,52 @@
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
 
-    const button = document.getElementById("addStampBtn");
-    
-    button.addEventListener("click", async () => {
-      // 点击瞬间，按钮文字改变，给老板反馈
-      button.innerText = "Processing...";
+    const statusDiv = document.getElementById('status');
+    let isProcessing = false; // 加入互斥锁，防止一次扫码触发多次加分
+
+    // 扫码成功后的动作
+    async function onScanSuccess(decodedText) {
+      if (isProcessing) return; // 如果正在加分，忽略后续的画面扫描
+      isProcessing = true;
       
-      const userRef = doc(db, "users", "test_user_001");
+      const scannedUserId = decodedText; // 扫出来的内容就是顾客 ID (test_user_001)
+      statusDiv.innerText = `Scanned ID: ${scannedUserId}. Processing...`;
+      statusDiv.style.color = "blue";
+
+      try {
+        // 去 Firebase 找到对应的顾客 ID，并加 1 分！
+        const userRef = doc(db, "users", scannedUserId);
+        await updateDoc(userRef, {
+          stamp_count: increment(1)
+        });
+        
+        statusDiv.innerText = `Success! +1 Stamp to ${scannedUserId}`;
+        statusDiv.style.color = "green";
+        
+        // 弹窗提示老板，顺便充当暂停功能
+        alert(`Successfully added 1 stamp to ${scannedUserId}!`);
+        
+      } catch (error) {
+        console.error("Error adding stamp: ", error);
+        statusDiv.innerText = "Error! Please try again.";
+        statusDiv.style.color = "red";
+      }
+
+      // 恢复状态，准备接待下一位顾客
+      setTimeout(() => {
+        isProcessing = false;
+        statusDiv.innerText = "Waiting for next scan...";
+        statusDiv.style.color = "#ff9800";
+      }, 1500);
+    }
+
+    // 初始化扫码器 (FPS: 帧率, qrbox: 扫描框大小)
+    let html5QrcodeScanner = new Html5QrcodeScanner(
+      "reader",
+      { fps: 10, qrbox: {width: 250, height: 250} },
+      false);
       
-      // 后端执行加 1 操作
-      await updateDoc(userRef, {
-        stamp_count: increment(1)
-      });
-      
-      // 恢复按钮状态并提示成功
-      button.innerText = "+1 Stamp";
-      alert("Success! 积分已发送至顾客账户。");
-    });
+    html5QrcodeScanner.render(onScanSuccess);
   </script>
 </body>
 </html>
