@@ -1,40 +1,169 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <title>StampLoop - My Stamps</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>StampLoop - Chan's Coffee</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
   <style>
-    body { text-align: center; font-family: sans-serif; padding-top: 30px; background-color: #f9f9f9; }
-    #stampCountDisplay { font-size: 56px; color: #4CAF50; margin: 10px 0; font-weight: bold; }
-    .qr-card { background: white; padding: 30px; border-radius: 16px; box-shadow: 0 8px 16px rgba(0,0,0,0.1); display: inline-block; margin-top: 20px; }
-    .qr-card img { width: 200px; height: 200px; }
-    .qr-card p { color: #666; font-size: 14px; margin-top: 15px; }
+    /* 咖啡馆主题色盘 */
+    :root {
+      --bg-color: #F5F0EB; /* 拿铁般的温暖背景 */
+      --primary-color: #4A3525; /* 深焙咖啡豆色 */
+      --accent-color: #D4A373; /* 焦糖色 */
+      --card-bg: #FFFFFF;
+    }
+
+    body {
+      margin: 0;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background-color: var(--bg-color);
+      color: var(--primary-color);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+    }
+
+    /* 核心分屏容器 */
+    .loyalty-container {
+      display: flex;
+      flex-wrap: wrap;
+      background: var(--card-bg);
+      border-radius: 20px;
+      box-shadow: 0 15px 35px rgba(74, 53, 37, 0.1);
+      overflow: hidden;
+      max-width: 800px;
+      width: 90%;
+    }
+
+    /* 左侧：品牌与二维码 */
+    .left-panel {
+      flex: 1;
+      min-width: 300px;
+      background-color: var(--primary-color);
+      color: white;
+      padding: 40px;
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .brand-name {
+      font-size: 28px;
+      font-weight: bold;
+      margin-bottom: 5px;
+      letter-spacing: 1px;
+    }
+
+    .brand-subtitle {
+      font-size: 14px;
+      color: var(--accent-color);
+      margin-bottom: 30px;
+    }
+
+    .qr-box {
+      background: white;
+      padding: 15px;
+      border-radius: 12px;
+      display: inline-block;
+    }
+
+    /* 右侧：咖啡印章卡 */
+    .right-panel {
+      flex: 1.5;
+      min-width: 300px;
+      padding: 40px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+    }
+
+    .status-text {
+      font-size: 22px;
+      font-weight: bold;
+      margin-bottom: 20px;
+      text-align: center;
+    }
+
+    /* 10格印章网格系统 */
+    .stamp-grid {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 15px;
+      margin-bottom: 20px;
+    }
+
+    .stamp-circle {
+      aspect-ratio: 1 / 1;
+      border: 3px dashed #E0D5C1;
+      border-radius: 50%;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-size: 28px;
+      background-color: transparent;
+      transition: all 0.3s ease;
+    }
+
+    /* 激活状态的印章 */
+    .stamp-circle.active {
+      border: 3px solid var(--accent-color);
+      background-color: var(--accent-color);
+      color: white;
+      transform: scale(1.05);
+      box-shadow: 0 4px 10px rgba(212, 163, 115, 0.4);
+    }
+
+    .reward-msg {
+      text-align: center;
+      font-size: 16px;
+      color: #888;
+      min-height: 24px;
+    }
   </style>
 </head>
 <body>
-  
-  <h1>My StampLoop</h1>
-  <h2 id="stampCountDisplay">Loading...</h2>
 
-  <div class="qr-card">
-    <div id="qrcode" style="display: flex; justify-content: center; margin: 20px;"></div>
-    <p>Please show this QR code to the cashier</p>
+  <div class="loyalty-container">
+    
+    <!-- 左半边：商铺信息与扫码区 -->
+    <div class="left-panel">
+      <div class="brand-name">Cat's Coffee</div>
+      <div class="brand-subtitle">Artisan Roasters</div>
+      <div class="qr-box">
+        <div id="qrcode"></div>
+      </div>
+      <p style="font-size: 12px; margin-top: 20px; color: #bbb;">Show this code to barista</p>
+    </div>
+
+    <!-- 右半边：动态虚拟集点卡 -->
+    <div class="right-panel">
+      <div class="status-text" id="status-title">Loading your card...</div>
+      
+      <!-- 这里是用来装 10 杯咖啡的网格 -->
+      <div class="stamp-grid" id="stamp-grid">
+        <!-- 这里的圆圈会用 JS 动态生成 -->
+      </div>
+      
+      <div class="reward-msg" id="reward-msg">Buy 10 coffees, get 1 free!</div>
+    </div>
+
   </div>
 
-<script type="module">
+  <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
     import { getFirestore, doc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
-    // 💡 修复点：在这里全局定义你的 User ID！
     const myUserId = "test_user_001";
 
-    // 让系统自动画出二维码
-    const qrCodeContainer = document.getElementById("qrcode");
-    new QRCode(qrCodeContainer, {
-      text: myUserId, // 现在系统认识这个变量了
-      width: 250,
-      height: 250,
-      colorDark : "#000000",
+    // 自动渲染二维码
+    new QRCode(document.getElementById("qrcode"), {
+      text: myUserId,
+      width: 180,
+      height: 180,
+      colorDark : "#4A3525", // 让二维码也是咖啡色！
       colorLight : "#ffffff",
       correctLevel : QRCode.CorrectLevel.H
     });
@@ -50,18 +179,50 @@
 
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
-
-    // 💡 修复点：这里也复用刚才定义的变量，保持数据一致性
     const docRef = doc(db, "users", myUserId);
 
-    // 核心魔法：onSnapshot 实时监听！
+    // 动态渲染 10 格印章的核心逻辑
+    function renderStamps(currentScore) {
+      const grid = document.getElementById("stamp-grid");
+      grid.innerHTML = ""; // 清空旧网格
+      
+      const displayScore = currentScore % 10; // 取余数，让它一直在 0-9 循环（或者10）
+      const isRewardReady = currentScore >= 10;
+
+      for (let i = 0; i < 10; i++) {
+        const circle = document.createElement("div");
+        
+        // 如果当前格子小于分数，或者是满分状态，就点亮它
+        if (i < displayScore || (isRewardReady && currentScore % 10 === 0)) {
+          circle.className = "stamp-circle active";
+          circle.innerText = "☕"; // 填入咖啡 Emoji
+        } else {
+          circle.className = "stamp-circle";
+          circle.innerText = ""; // 空白虚线框
+        }
+        grid.appendChild(circle);
+      }
+
+      // 更改顶部标题
+      if (isRewardReady) {
+        document.getElementById("status-title").innerText = "🎉 Reward Unlocked!";
+        document.getElementById("status-title").style.color = "#D4A373";
+        document.getElementById("reward-msg").innerText = "You have a free coffee waiting!";
+      } else {
+        document.getElementById("status-title").innerText = `You have ${displayScore} stamps`;
+        document.getElementById("status-title").style.color = "#4A3525";
+        document.getElementById("reward-msg").innerText = `${10 - displayScore} more coffees to go!`;
+      }
+    }
+
+    // 实时监听数据库
     onSnapshot(docRef, (docSnap) => {
       if (docSnap.exists()) {
         const userData = docSnap.data();
-        document.getElementById("stampCountDisplay").innerText = userData.stamp_count + " Stamps";
-        console.log("叮！检测到数据库更新，当前积分: ", userData.stamp_count);
-      } else {
-        document.getElementById("stampCountDisplay").innerText = "User not found";
+        const score = userData.stamp_count || 0;
+        renderStamps(score);
       }
     });
   </script>
+</body>
+</html>
