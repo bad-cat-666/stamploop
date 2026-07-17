@@ -3,10 +3,9 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Chan's Coffee - Member Portal</title>
+  <title>Cat's Coffee - Member App</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
   <style>
-    /* 咖啡馆主题色盘 */
     :root {
       --bg-color: #F5F0EB; 
       --primary-color: #4A3525; 
@@ -28,14 +27,14 @@
     }
 
     /* =========================================
-       1. 登录/注册大厅样式 (居中小卡片)
+       1. 登录/注册大厅样式
        ========================================= */
     #auth-wrapper {
       background: var(--card-bg);
       border-radius: 20px;
-      box-shadow: 0 15px 35px rgba(74, 53, 37, 0.1);
+      box-shadow: 0 15px 35px rgba(74, 53, 37, 0.15);
       width: 100%;
-      max-width: 400px;
+      max-width: 380px; /* 和会员卡保持一样的手机宽度 */
       padding: 40px 30px;
       box-sizing: border-box;
       text-align: center;
@@ -62,62 +61,57 @@
     #auth-error { color: red; font-size: 13px; margin-top: 10px; display: none; }
 
     /* =========================================
-       2. 会员专属空间样式 (你最爱的分屏布局)
+       2. 垂直版数字会员卡样式 (Vertical App)
        ========================================= */
-    .loyalty-container {
-      display: none; /* 默认隐藏，登录后才展开 */
-      flex-wrap: wrap;
+    #app-wrapper {
+      display: none; /* 默认隐藏，登录后才显示 */
+      flex-direction: column; 
       background: var(--card-bg);
       border-radius: 20px;
-      box-shadow: 0 15px 35px rgba(74, 53, 37, 0.1);
+      box-shadow: 0 15px 35px rgba(74, 53, 37, 0.15);
       overflow: hidden;
-      max-width: 800px;
+      max-width: 380px; 
       width: 100%;
     }
 
-    /* 左侧：品牌与二维码 */
-    .left-panel {
-      flex: 1;
-      min-width: 300px;
+    /* 上半区：深色背景，放二维码 */
+    .top-panel {
       background-color: var(--primary-color);
       color: white;
-      padding: 40px;
+      padding: 35px 20px 25px 20px;
       text-align: center;
       display: flex;
       flex-direction: column;
       align-items: center;
-      justify-content: center;
     }
 
-    .brand-name { font-size: 28px; font-weight: bold; margin-bottom: 5px; letter-spacing: 1px; }
-    .welcome-text { font-size: 16px; color: var(--accent-color); margin-bottom: 25px; }
+    .brand-name { font-size: 26px; font-weight: bold; margin-bottom: 5px; letter-spacing: 1px; }
+    .welcome-text { font-size: 14px; color: var(--accent-color); margin-bottom: 20px; }
 
-    .qr-box { background: white; padding: 15px; border-radius: 12px; display: inline-block; margin-bottom: 20px;}
+    .qr-box { background: white; padding: 12px; border-radius: 12px; display: inline-block; margin-bottom: 15px;}
 
-    .btn-logout { background-color: transparent; border: 1px solid #D4A373; color: #D4A373; padding: 8px 20px; border-radius: 20px; font-size: 14px; cursor: pointer; margin-top: 10px;}
+    .btn-logout { background-color: transparent; border: 1px solid #D4A373; color: #D4A373; padding: 6px 16px; border-radius: 20px; font-size: 12px; cursor: pointer; margin-top: 5px;}
     .btn-logout:hover { background-color: rgba(212, 163, 115, 0.1); }
 
-    /* 右侧：咖啡印章卡 */
-    .right-panel {
-      flex: 1.5;
-      min-width: 300px;
-      padding: 40px;
+    /* 下半区：浅色背景，放印章 */
+    .bottom-panel {
+      padding: 30px 20px;
       display: flex;
       flex-direction: column;
-      justify-content: center;
+      align-items: center;
     }
 
-    .status-text { font-size: 22px; font-weight: bold; margin-bottom: 20px; text-align: center; }
+    .status-text { font-size: 20px; font-weight: bold; margin-bottom: 20px; text-align: center; }
 
-    .stamp-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 15px; margin-bottom: 20px; }
+    .stamp-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; margin-bottom: 20px; }
     .stamp-circle {
-      aspect-ratio: 1 / 1; border: 3px dashed #E0D5C1; border-radius: 50%;
-      display: flex; justify-content: center; align-items: center; font-size: 28px; transition: all 0.3s ease;
+      aspect-ratio: 1 / 1; width: 45px; border: 3px dashed #E0D5C1; border-radius: 50%;
+      display: flex; justify-content: center; align-items: center; font-size: 22px; transition: all 0.3s ease;
     }
     .stamp-circle.active {
       border: 3px solid var(--accent-color); background-color: var(--accent-color); color: white; transform: scale(1.05); box-shadow: 0 4px 10px rgba(212, 163, 115, 0.4);
     }
-    .reward-msg { text-align: center; font-size: 16px; color: #888; min-height: 24px; }
+    .reward-msg { text-align: center; font-size: 14px; color: #888; min-height: 20px; }
   </style>
 </head>
 <body>
@@ -129,7 +123,7 @@
 
     <!-- 登录表单 -->
     <div id="login-form">
-      <input type="email" id="login-email" class="input-field" placeholder="Email">
+      <input type="email" id="login-email" class="input-field" placeholder="Email Address">
       <input type="password" id="login-password" class="input-field" placeholder="Password">
       <button class="btn" id="btn-login">Sign In</button>
       <div class="switch-link" id="go-to-register">New customer? Create account</div>
@@ -140,7 +134,7 @@
       <input type="text" id="reg-name" class="input-field" placeholder="Full Name">
       <input type="tel" id="reg-phone" class="input-field" placeholder="Phone Number">
       <input type="date" id="reg-dob" class="input-field" title="Birthday">
-      <input type="email" id="reg-email" class="input-field" placeholder="Email">
+      <input type="email" id="reg-email" class="input-field" placeholder="Email Address">
       <input type="password" id="reg-password" class="input-field" placeholder="Create Password">
       <button class="btn" id="btn-register">Join Rewards</button>
       <div class="switch-link" id="go-to-login">Already have an account? Sign in</div>
@@ -149,11 +143,10 @@
     <div id="auth-error">Error message goes here</div>
   </div>
 
-  <!-- ☕ 会员专属空间 (经典分屏布局) -->
-  <div id="app-wrapper" class="loyalty-container">
+  <!-- ☕ 会员专属空间 (垂直版数字卡) -->
+  <div id="app-wrapper">
     
-    <!-- 左半边：商铺信息与扫码区 -->
-    <div class="left-panel">
+    <div class="top-panel">
       <div class="brand-name">Cat's Coffee</div>
       <div class="welcome-text" id="welcome-name">Loading...</div>
       
@@ -161,16 +154,15 @@
         <div id="qrcode"></div>
       </div>
       
-      <p style="font-size: 12px; margin-bottom: 15px; color: #bbb;">Show this code to barista</p>
+      <p style="font-size: 12px; margin: 0; color: #bbb;">Show this code to barista</p>
       <button class="btn-logout" id="btn-logout">Sign Out</button>
     </div>
 
-    <!-- 右半边：动态虚拟集点卡 -->
-    <div class="right-panel">
+    <div class="bottom-panel">
       <div class="status-text" id="status-title">Loading your card...</div>
       
       <div class="stamp-grid" id="stamp-grid">
-        <!-- 这里的圆圈会用 JS 动态生成 -->
+        <!-- JS 动态生成 -->
       </div>
       
       <div class="reward-msg" id="reward-msg">Buy 10 coffees, get 1 free!</div>
@@ -216,16 +208,16 @@
 
     let unsubscribeSnapshot = null;
 
+    // 核心状态监听：控制界面的翻转
     onAuthStateChanged(auth, async (user) => {
       if (user) {
-        // UI 切换：隐藏大厅，显示分屏
         authWrapper.style.display = 'none';
-        appWrapper.style.display = 'flex';
+        appWrapper.style.display = 'flex'; // 显示垂直排版
         
         document.getElementById("qrcode").innerHTML = "";
         new QRCode(document.getElementById("qrcode"), {
           text: user.uid,
-          width: 180, height: 180,
+          width: 160, height: 160,
           colorDark : "#4A3525", colorLight : "#ffffff", correctLevel : QRCode.CorrectLevel.H
         });
 
@@ -243,13 +235,13 @@
           }
         });
       } else {
-        // UI 切换：显示大厅，隐藏分屏
         authWrapper.style.display = 'block';
         appWrapper.style.display = 'none';
         if (unsubscribeSnapshot) unsubscribeSnapshot();
       }
     });
 
+    // 注册表单提交逻辑
     document.getElementById('btn-register').onclick = async () => {
       const email = document.getElementById('reg-email').value;
       const password = document.getElementById('reg-password').value;
@@ -272,6 +264,7 @@
       }
     };
 
+    // 登录表单提交逻辑
     document.getElementById('btn-login').onclick = async () => {
       const email = document.getElementById('login-email').value;
       const password = document.getElementById('login-password').value;
