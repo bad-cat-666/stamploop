@@ -3,9 +3,10 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Cat's Coffee - Member Portal</title>
+  <title>Chan's Coffee - Member Portal</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
   <style>
+    /* 咖啡馆主题色盘 */
     :root {
       --bg-color: #F5F0EB; 
       --primary-color: #4A3525; 
@@ -26,126 +27,160 @@
       box-sizing: border-box;
     }
 
-    /* 卡片通用样式 */
-    .card {
+    /* =========================================
+       1. 登录/注册大厅样式 (居中小卡片)
+       ========================================= */
+    #auth-wrapper {
       background: var(--card-bg);
       border-radius: 20px;
       box-shadow: 0 15px 35px rgba(74, 53, 37, 0.1);
       width: 100%;
       max-width: 400px;
-      padding: 30px;
+      padding: 40px 30px;
       box-sizing: border-box;
       text-align: center;
     }
 
-    h2 { margin-top: 0; color: var(--primary-color); }
-    p { color: #888; font-size: 14px; margin-bottom: 20px; }
+    #auth-wrapper h2 { margin-top: 0; font-size: 28px; }
+    #auth-wrapper p { color: #888; font-size: 14px; margin-bottom: 25px; }
 
-    /* 表单输入框 */
     .input-field {
-      width: 100%;
-      padding: 12px;
-      margin: 8px 0;
-      border: 2px solid #E0D5C1;
-      border-radius: 8px;
-      font-size: 15px;
-      outline: none;
-      box-sizing: border-box;
+      width: 100%; padding: 12px; margin: 8px 0; border: 2px solid #E0D5C1;
+      border-radius: 8px; font-size: 15px; outline: none; box-sizing: border-box;
     }
     .input-field:focus { border-color: var(--accent-color); }
 
-    /* 按钮样式 */
     .btn {
-      width: 100%;
-      padding: 14px;
-      font-size: 16px;
-      margin: 15px 0 10px 0;
-      border: none;
-      border-radius: 10px;
-      cursor: pointer;
-      color: white;
-      font-weight: bold;
-      transition: all 0.2s ease;
-      background-color: var(--primary-color);
+      width: 100%; padding: 14px; font-size: 16px; margin: 15px 0 10px 0;
+      border: none; border-radius: 10px; cursor: pointer; color: white;
+      font-weight: bold; transition: all 0.2s ease; background-color: var(--primary-color);
     }
     .btn:active { transform: scale(0.98); }
     
-    .switch-link {
-      color: var(--accent-color);
-      font-size: 14px;
-      cursor: pointer;
-      text-decoration: underline;
-    }
-
-    /* 模块切换 */
-    #auth-section { display: block; }
-    #member-section { display: none; }
-    
-    /* 注册表单默认隐藏 */
+    .switch-link { color: var(--accent-color); font-size: 14px; cursor: pointer; text-decoration: underline; }
     #register-form { display: none; }
-    #login-form { display: block; }
-    
     #auth-error { color: red; font-size: 13px; margin-top: 10px; display: none; }
 
-    /* 会员卡区样式 */
-    .qr-box { background: white; padding: 15px; border-radius: 12px; display: inline-block; border: 2px dashed #E0D5C1; margin-bottom: 20px;}
-    .stamp-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; margin: 20px 0; }
+    /* =========================================
+       2. 会员专属空间样式 (你最爱的分屏布局)
+       ========================================= */
+    .loyalty-container {
+      display: none; /* 默认隐藏，登录后才展开 */
+      flex-wrap: wrap;
+      background: var(--card-bg);
+      border-radius: 20px;
+      box-shadow: 0 15px 35px rgba(74, 53, 37, 0.1);
+      overflow: hidden;
+      max-width: 800px;
+      width: 100%;
+    }
+
+    /* 左侧：品牌与二维码 */
+    .left-panel {
+      flex: 1;
+      min-width: 300px;
+      background-color: var(--primary-color);
+      color: white;
+      padding: 40px;
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .brand-name { font-size: 28px; font-weight: bold; margin-bottom: 5px; letter-spacing: 1px; }
+    .welcome-text { font-size: 16px; color: var(--accent-color); margin-bottom: 25px; }
+
+    .qr-box { background: white; padding: 15px; border-radius: 12px; display: inline-block; margin-bottom: 20px;}
+
+    .btn-logout { background-color: transparent; border: 1px solid #D4A373; color: #D4A373; padding: 8px 20px; border-radius: 20px; font-size: 14px; cursor: pointer; margin-top: 10px;}
+    .btn-logout:hover { background-color: rgba(212, 163, 115, 0.1); }
+
+    /* 右侧：咖啡印章卡 */
+    .right-panel {
+      flex: 1.5;
+      min-width: 300px;
+      padding: 40px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+    }
+
+    .status-text { font-size: 22px; font-weight: bold; margin-bottom: 20px; text-align: center; }
+
+    .stamp-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 15px; margin-bottom: 20px; }
     .stamp-circle {
-      aspect-ratio: 1 / 1; border: 2px dashed #E0D5C1; border-radius: 50%;
-      display: flex; justify-content: center; align-items: center; font-size: 20px;
+      aspect-ratio: 1 / 1; border: 3px dashed #E0D5C1; border-radius: 50%;
+      display: flex; justify-content: center; align-items: center; font-size: 28px; transition: all 0.3s ease;
     }
     .stamp-circle.active {
-      border: 2px solid var(--accent-color); background-color: var(--accent-color); color: white;
+      border: 3px solid var(--accent-color); background-color: var(--accent-color); color: white; transform: scale(1.05); box-shadow: 0 4px 10px rgba(212, 163, 115, 0.4);
     }
-    #welcome-name { font-size: 20px; font-weight: bold; margin-bottom: 5px; }
+    .reward-msg { text-align: center; font-size: 16px; color: #888; min-height: 24px; }
   </style>
 </head>
 <body>
 
-  <!-- 🚪 1. 登录与注册大厅 -->
-  <div id="auth-section" class="card">
-    <h2>Chan's Coffee</h2>
-    <p>Join our rewards program</p>
+  <!-- 🚪 登录/注册大厅 -->
+  <div id="auth-wrapper">
+    <h2>Cat's Coffee</h2>
+    <p>Sign in to your digital loyalty card</p>
 
     <!-- 登录表单 -->
     <div id="login-form">
       <input type="email" id="login-email" class="input-field" placeholder="Email">
       <input type="password" id="login-password" class="input-field" placeholder="Password">
-      <button class="btn" id="btn-login">Login</button>
+      <button class="btn" id="btn-login">Sign In</button>
       <div class="switch-link" id="go-to-register">New customer? Create account</div>
     </div>
 
-    <!-- 注册表单 (包含你要求的所有字段) -->
+    <!-- 注册表单 -->
     <div id="register-form">
       <input type="text" id="reg-name" class="input-field" placeholder="Full Name">
       <input type="tel" id="reg-phone" class="input-field" placeholder="Phone Number">
       <input type="date" id="reg-dob" class="input-field" title="Birthday">
       <input type="email" id="reg-email" class="input-field" placeholder="Email">
       <input type="password" id="reg-password" class="input-field" placeholder="Create Password">
-      <button class="btn" id="btn-register">Create Account</button>
-      <div class="switch-link" id="go-to-login">Already have an account? Login</div>
+      <button class="btn" id="btn-register">Join Rewards</button>
+      <div class="switch-link" id="go-to-login">Already have an account? Sign in</div>
     </div>
     
     <div id="auth-error">Error message goes here</div>
   </div>
 
-  <!-- ☕ 2. 会员专属空间 (登录后才显示) -->
-  <div id="member-section" class="card">
-    <div id="welcome-name">Loading...</div>
-    <p id="status-title">Loading your card...</p>
+  <!-- ☕ 会员专属空间 (经典分屏布局) -->
+  <div id="app-wrapper" class="loyalty-container">
     
-    <div class="qr-box">
-      <div id="qrcode"></div>
+    <!-- 左半边：商铺信息与扫码区 -->
+    <div class="left-panel">
+      <div class="brand-name">Cat's Coffee</div>
+      <div class="welcome-text" id="welcome-name">Loading...</div>
+      
+      <div class="qr-box">
+        <div id="qrcode"></div>
+      </div>
+      
+      <p style="font-size: 12px; margin-bottom: 15px; color: #bbb;">Show this code to barista</p>
+      <button class="btn-logout" id="btn-logout">Sign Out</button>
     </div>
 
-    <div class="stamp-grid" id="stamp-grid"></div>
-    <button class="btn" id="btn-logout" style="background-color: #ddd; color: #555; padding: 10px; margin-top: 20px;">Logout</button>
+    <!-- 右半边：动态虚拟集点卡 -->
+    <div class="right-panel">
+      <div class="status-text" id="status-title">Loading your card...</div>
+      
+      <div class="stamp-grid" id="stamp-grid">
+        <!-- 这里的圆圈会用 JS 动态生成 -->
+      </div>
+      
+      <div class="reward-msg" id="reward-msg">Buy 10 coffees, get 1 free!</div>
+    </div>
+
   </div>
 
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
     import { getFirestore, doc, onSnapshot, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
-    // 引入 Auth 模块处理顾客登录/注册
     import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 
     const firebaseConfig = {
@@ -161,9 +196,8 @@
     const db = getFirestore(app);
     const auth = getAuth(app);
 
-    // UI 切换控制
-    const authSection = document.getElementById('auth-section');
-    const memberSection = document.getElementById('member-section');
+    const authWrapper = document.getElementById('auth-wrapper');
+    const appWrapper = document.getElementById('app-wrapper');
     const loginForm = document.getElementById('login-form');
     const registerForm = document.getElementById('register-form');
     const authError = document.getElementById('auth-error');
@@ -180,50 +214,42 @@
       authError.style.display = 'none';
     };
 
-    let unsubscribeSnapshot = null; // 用来随时关掉数据库监听器
+    let unsubscribeSnapshot = null;
 
-    // ==========================================
-    // 🔐 系统核心：监听顾客是否已经登录
-    // ==========================================
     onAuthStateChanged(auth, async (user) => {
       if (user) {
-        // 顾客已登录：进入会员空间
-        authSection.style.display = 'none';
-        memberSection.style.display = 'block';
+        // UI 切换：隐藏大厅，显示分屏
+        authWrapper.style.display = 'none';
+        appWrapper.style.display = 'flex';
         
-        // 1. 生成二维码 (内容就是 Firebase 给这个账号分配的独一无二的 UID)
-        document.getElementById("qrcode").innerHTML = ""; // 清空旧图
+        document.getElementById("qrcode").innerHTML = "";
         new QRCode(document.getElementById("qrcode"), {
           text: user.uid,
-          width: 150, height: 150,
+          width: 180, height: 180,
           colorDark : "#4A3525", colorLight : "#ffffff", correctLevel : QRCode.CorrectLevel.H
         });
 
-        // 2. 去数据库拉取这个顾客的详细资料 (名字)
         const userRef = doc(db, "users", user.uid);
         const userSnap = await getDoc(userRef);
         if(userSnap.exists()) {
-           document.getElementById("welcome-name").innerText = "Hi, " + userSnap.data().name;
+           document.getElementById("welcome-name").innerText = "Hi, " + userSnap.data().name + "!";
+        } else {
+           document.getElementById("welcome-name").innerText = "Hi there!";
         }
 
-        // 3. 实时监听这个 UID 的分数变化
         unsubscribeSnapshot = onSnapshot(userRef, (docSnap) => {
           if (docSnap.exists()) {
             renderStamps(docSnap.data().stamp_count || 0);
           }
         });
-
       } else {
-        // 顾客未登录：显示大厅
-        authSection.style.display = 'block';
-        memberSection.style.display = 'none';
-        if (unsubscribeSnapshot) unsubscribeSnapshot(); // 停止窃听数据
+        // UI 切换：显示大厅，隐藏分屏
+        authWrapper.style.display = 'block';
+        appWrapper.style.display = 'none';
+        if (unsubscribeSnapshot) unsubscribeSnapshot();
       }
     });
 
-    // ==========================================
-    // 📝 顾客注册逻辑 (联表操作！)
-    // ==========================================
     document.getElementById('btn-register').onclick = async () => {
       const email = document.getElementById('reg-email').value;
       const password = document.getElementById('reg-password').value;
@@ -237,27 +263,15 @@
       }
 
       try {
-        // 第一步：在 Auth 里创建安全登录凭证
         const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-        const newUserId = userCredential.user.uid; // 获取系统分配的安全 ID
-        
-        // 第二步：拿着这个 ID，去 Firestore 数据库里建档！
-        await setDoc(doc(db, "users", newUserId), {
-          name: name,
-          phone: phone,
-          birthday: dob,
-          email: email,
-          stamp_count: 0 // 初始分数为0
+        await setDoc(doc(db, "users", userCredential.user.uid), {
+          name: name, phone: phone, birthday: dob, email: email, stamp_count: 0
         });
-
       } catch (error) {
         showError(error.message);
       }
     };
 
-    // ==========================================
-    // 🔑 顾客登录与登出逻辑
-    // ==========================================
     document.getElementById('btn-login').onclick = async () => {
       const email = document.getElementById('login-email').value;
       const password = document.getElementById('login-password').value;
@@ -268,16 +282,13 @@
       }
     };
 
-    document.getElementById('btn-logout').onclick = () => {
-      signOut(auth);
-    };
+    document.getElementById('btn-logout').onclick = () => signOut(auth);
 
     function showError(msg) {
       authError.innerText = msg;
       authError.style.display = 'block';
     }
 
-    // 画咖啡杯网格的代码 (与之前一致)
     function renderStamps(currentScore) {
       const grid = document.getElementById("stamp-grid");
       grid.innerHTML = ""; 
@@ -295,8 +306,15 @@
         }
         grid.appendChild(circle);
       }
-      if (isRewardReady) document.getElementById("status-title").innerText = "🎉 Reward Unlocked!";
-      else document.getElementById("status-title").innerText = `${10 - displayScore} more coffees to go!`;
+      if (isRewardReady) {
+        document.getElementById("status-title").innerText = "🎉 Reward Unlocked!";
+        document.getElementById("status-title").style.color = "#D4A373";
+        document.getElementById("reward-msg").innerText = "You have a free coffee waiting!";
+      } else {
+        document.getElementById("status-title").innerText = `You have ${displayScore} stamps`;
+        document.getElementById("status-title").style.color = "#4A3525";
+        document.getElementById("reward-msg").innerText = `${10 - displayScore} more coffees to go!`;
+      }
     }
   </script>
 </body>
