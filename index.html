@@ -26,41 +26,54 @@
       box-sizing: border-box;
     }
 
-    /* 🚪 极简登录大厅 */
+    /* 🚪 登录/注册大厅 */
     #auth-wrapper {
       background: var(--card-bg);
       border-radius: 20px;
       box-shadow: 0 15px 35px rgba(74, 53, 37, 0.15);
       width: 100%;
       max-width: 380px; 
-      padding: 50px 30px;
+      padding: 40px 30px;
       box-sizing: border-box;
       text-align: center;
     }
 
     #auth-wrapper h2 { margin-top: 0; font-size: 28px; }
-    #auth-wrapper p { color: #888; font-size: 15px; margin-bottom: 35px; }
+    #auth-wrapper p { color: #888; font-size: 14px; margin-bottom: 25px; }
 
     /* Google 一键登录按钮 */
     .btn-google {
-      width: 100%;
-      padding: 14px;
-      font-size: 16px;
-      border: 1px solid #ccc;
-      border-radius: 10px;
-      cursor: pointer;
-      color: #444;
-      font-weight: bold;
-      background-color: white;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      gap: 10px;
-      transition: all 0.2s ease;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+      width: 100%; padding: 14px; font-size: 16px; border: 1px solid #ccc;
+      border-radius: 10px; cursor: pointer; color: #444; font-weight: bold;
+      background-color: white; display: flex; justify-content: center;
+      align-items: center; gap: 10px; transition: all 0.2s ease;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.05); margin-bottom: 15px;
     }
     .btn-google:active { transform: scale(0.98); background-color: #f9f9f9; }
+
+    /* "OR" 分割线 */
+    .divider { display: flex; align-items: center; text-align: center; margin: 20px 0; color: #aaa; font-size: 12px; }
+    .divider::before, .divider::after { content: ''; flex: 1; border-bottom: 1px solid #eee; }
+    .divider:not(:empty)::before { margin-right: 15px; }
+    .divider:not(:empty)::after { margin-left: 15px; }
+
+    /* 表单输入框 */
+    .input-field {
+      width: 100%; padding: 12px; margin: 8px 0; border: 2px solid #E0D5C1;
+      border-radius: 8px; font-size: 15px; outline: none; box-sizing: border-box;
+    }
+    .input-field:focus { border-color: var(--accent-color); }
+
+    .btn {
+      width: 100%; padding: 14px; font-size: 16px; margin: 15px 0 10px 0;
+      border: none; border-radius: 10px; cursor: pointer; color: white;
+      font-weight: bold; transition: all 0.2s ease; background-color: var(--primary-color);
+    }
+    .btn:active { transform: scale(0.98); }
     
+    .switch-link { color: var(--accent-color); font-size: 14px; cursor: pointer; text-decoration: underline; margin-top: 5px; display: inline-block;}
+    
+    #register-form { display: none; }
     #auth-error { color: red; font-size: 13px; margin-top: 15px; display: none; }
 
     /* ☕ 垂直版数字会员卡 (Vertical App) */
@@ -92,12 +105,12 @@
 </head>
 <body>
 
-  <!-- 🚪 极简大厅：只有 Google 登录 -->
+  <!-- 🚪 综合登录大厅 -->
   <div id="auth-wrapper">
     <h2>Cat's Coffee</h2>
     <p>Sign in to your digital loyalty card</p>
 
-    <!-- Google 一键登录按钮 -->
+    <!-- Google 登录 -->
     <button class="btn-google" id="btn-google">
       <svg width="20" height="20" viewBox="0 0 24 24">
         <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
@@ -107,6 +120,27 @@
       </svg>
       Continue with Google
     </button>
+    
+    <div class="divider">OR</div>
+
+    <!-- 邮箱登录表单 -->
+    <div id="login-form">
+      <input type="email" id="login-email" class="input-field" placeholder="Email Address">
+      <input type="password" id="login-password" class="input-field" placeholder="Password">
+      <button class="btn" id="btn-login">Sign In</button>
+      <div class="switch-link" id="go-to-register">New customer? Create account</div>
+    </div>
+
+    <!-- 邮箱注册表单 -->
+    <div id="register-form">
+      <input type="text" id="reg-name" class="input-field" placeholder="Full Name">
+      <input type="tel" id="reg-phone" class="input-field" placeholder="Phone Number">
+      <input type="date" id="reg-dob" class="input-field" title="Birthday">
+      <input type="email" id="reg-email" class="input-field" placeholder="Email Address">
+      <input type="password" id="reg-password" class="input-field" placeholder="Create Password">
+      <button class="btn" id="btn-register">Join Rewards</button>
+      <div class="switch-link" id="go-to-login">Already have an account? Sign in</div>
+    </div>
     
     <div id="auth-error">Error message goes here</div>
   </div>
@@ -133,8 +167,8 @@
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
     import { getFirestore, doc, onSnapshot, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
-    // 💡 引入了 GoogleAuthProvider 和 signInWithPopup
-    import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+    // 💡 确保所有 Auth 需要的模块都在这里
+    import { getAuth, GoogleAuthProvider, signInWithPopup, createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyCy2L_W38K-7JHtbfLu1oJeHcxkCr9yk2o",
@@ -148,17 +182,31 @@
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
     const auth = getAuth(app);
-    const provider = new GoogleAuthProvider(); // 初始化谷歌登录提供者
+    const provider = new GoogleAuthProvider();
 
+    // UI 元素
     const authWrapper = document.getElementById('auth-wrapper');
     const appWrapper = document.getElementById('app-wrapper');
+    const loginForm = document.getElementById('login-form');
+    const registerForm = document.getElementById('register-form');
     const authError = document.getElementById('auth-error');
+
+    // 切换登录/注册表单
+    document.getElementById('go-to-register').onclick = () => {
+      loginForm.style.display = 'none';
+      registerForm.style.display = 'block';
+      authError.style.display = 'none';
+    };
+
+    document.getElementById('go-to-login').onclick = () => {
+      registerForm.style.display = 'none';
+      loginForm.style.display = 'block';
+      authError.style.display = 'none';
+    };
 
     let unsubscribeSnapshot = null;
 
-    // ==========================================
     // 🔐 状态监听 (控制页面翻转)
-    // ==========================================
     onAuthStateChanged(auth, async (user) => {
       if (user) {
         authWrapper.style.display = 'none';
@@ -174,11 +222,9 @@
         const userRef = doc(db, "users", user.uid);
         const userSnap = await getDoc(userRef);
         
-        // 我们不需要顾客填名字了，直接读取他的 Google 名字！
-        if(userSnap.exists()) {
+        if(userSnap.exists() && userSnap.data().name) {
            document.getElementById("welcome-name").innerText = "Hi, " + userSnap.data().name + "!";
         } else {
-           // 万一网络延迟，用 Google 账号自带的名字兜底
            document.getElementById("welcome-name").innerText = "Hi, " + (user.displayName || "Coffee Lover") + "!";
         }
 
@@ -190,45 +236,77 @@
       } else {
         authWrapper.style.display = 'block';
         appWrapper.style.display = 'none';
+        // 登出后重置回登录表单
+        loginForm.style.display = 'block';
+        registerForm.style.display = 'none';
         if (unsubscribeSnapshot) unsubscribeSnapshot();
       }
     });
 
-    // ==========================================
     // 🇬 谷歌一键登录逻辑
-    // ==========================================
     document.getElementById('btn-google').onclick = async () => {
       try {
         authError.style.display = 'none';
-        
-        // 弹出谷歌授权窗口
         const result = await signInWithPopup(auth, provider);
         const user = result.user;
-        
-        // 关键逻辑：检查这是不是一个新顾客
         const userRef = doc(db, "users", user.uid);
         const userSnap = await getDoc(userRef);
         
         if (!userSnap.exists()) {
-          // 如果是新顾客，用他的谷歌资料在我们的数据库里静默建档！
           await setDoc(userRef, {
             name: user.displayName || "Coffee Lover",
             email: user.email,
-            stamp_count: 0 // 新客送 0 分
+            stamp_count: 0
           });
         }
-        // 如果是老顾客，什么都不用做，上面的 onAuthStateChanged 会处理一切。
-
       } catch (error) {
-        authError.innerText = error.message;
-        authError.style.display = 'block';
+        showError(error.message);
+      }
+    };
+
+    // 📧 邮箱注册逻辑
+    document.getElementById('btn-register').onclick = async () => {
+      const email = document.getElementById('reg-email').value;
+      const password = document.getElementById('reg-password').value;
+      const name = document.getElementById('reg-name').value;
+      const phone = document.getElementById('reg-phone').value;
+      const dob = document.getElementById('reg-dob').value;
+
+      if(!name || !phone || !email || !password) {
+        showError("Please fill in all required fields.");
+        return;
+      }
+
+      try {
+        const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+        await setDoc(doc(db, "users", userCredential.user.uid), {
+          name: name, phone: phone, birthday: dob, email: email, stamp_count: 0
+        });
+      } catch (error) {
+        showError(error.message);
+      }
+    };
+
+    // 🔑 邮箱登录逻辑
+    document.getElementById('btn-login').onclick = async () => {
+      const email = document.getElementById('login-email').value;
+      const password = document.getElementById('login-password').value;
+      try {
+        await signInWithEmailAndPassword(auth, email, password);
+      } catch (error) {
+        showError("Invalid email or password.");
       }
     };
 
     // 登出逻辑
     document.getElementById('btn-logout').onclick = () => signOut(auth);
 
-    // 印章渲染逻辑 (保持不变)
+    function showError(msg) {
+      authError.innerText = msg;
+      authError.style.display = 'block';
+    }
+
+    // ☕ 印章渲染逻辑
     function renderStamps(currentScore) {
       const grid = document.getElementById("stamp-grid");
       grid.innerHTML = ""; 
